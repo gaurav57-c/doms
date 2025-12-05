@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Community — More (cp-4)</title>
+    <style>
+      :root {
+        --bg: #fff7e6;
+        --card: #fff;
+        --muted: #6b6b6b;
+        --accent: #1d9bf0;
+        --phone-w: 360px;
+        --safe-bottom: 20px;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: Inter, system-ui, Segoe UI, Roboto, Arial;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #fffdfa 0%, #fff7e6 100%);
+        padding: 20px;
+      }
+      .phone {
+        width: var(--phone-w);
+        height: 780px;
+        background: var(--bg);
+        border-radius: 24px;
+        box-shadow: 0 30px 60px rgba(22, 22, 22, 0.12);
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Header */
+      .topbar {
+        height: 64px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        background: transparent;
+      }
+      .title {
+        font-weight: 600;
+        font-size: 18px;
+        color: #222;
+        text-transform: lowercase;
+      }
+      .profile-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        border: none;
+        background: linear-gradient(135deg, #f0f0f0, #e6e6e6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      }
+
+      /* content */
+      .list {
+        padding: 12px;
+        overflow: auto;
+        flex: 1;
+        -webkit-overflow-scrolling: touch;
+      }
+      .card {
+        background: var(--card);
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 6px 18px rgba(15, 15, 15, 0.04);
+        color: var(--muted);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 90px;
+      }
+
+      /* bottom nav */
+      .bnav {
+        height: 64px;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        gap: 8px;
+        background: transparent;
+      }
+      .bnav button {
+        flex: 1;
+        height: 48px;
+        border-radius: 12px;
+        border: none;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--muted);
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .bnav button.active {
+        background: linear-gradient(
+          90deg,
+          rgba(29, 155, 240, 0.12),
+          transparent
+        );
+        color: var(--accent);
+      }
+
+      /* Friends Section Styling */
+      .friends-section {
+        padding: 16px;
+      }
+
+      .friends-section h2 {
+        color: #222;
+        font-size: 20px;
+        margin-bottom: 16px;
+      }
+
+      .add-friends {
+        background: var(--card);
+        padding: 16px;
+        border-radius: 14px;
+        margin-bottom: 20px;
+        box-shadow: 0 6px 18px rgba(15, 15, 15, 0.04);
+      }
+
+      .add-friends input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #e8e8e8;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+
+      .add-friends button {
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .friends-requests,
+      .my-friends {
+        background: var(--card);
+        padding: 16px;
+        border-radius: 14px;
+        margin-bottom: 20px;
+        box-shadow: 0 6px 18px rgba(15, 15, 15, 0.04);
+      }
+
+      .friends-requests h3,
+      .my-friends h3 {
+        color: #222;
+        font-size: 16px;
+        margin-bottom: 12px;
+      }
+
+      .friend-item {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        border-bottom: 1px solid #f0f0f0;
+      }
+
+      .friend-item:last-child {
+        border-bottom: none;
+      }
+
+      .friend-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #f0f0f0, #e6e6e6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      .friend-info {
+        flex: 1;
+      }
+
+      .friend-name {
+        font-weight: 600;
+        color: #222;
+      }
+
+      .friend-status {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .friend-actions button {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 8px;
+        margin-left: 8px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+
+      .accept-btn {
+        background: var(--accent);
+        color: white;
+      }
+
+      .reject-btn {
+        background: #f0f0f0;
+        color: var(--muted);
+      }
+
+      /* Friend Action Menu */
+      .friend-menu {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: var(--phone-w);
+        max-width: 100%;
+        background: white;
+        border-radius: 20px 20px 0 0;
+        padding: 20px;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        transform: translate(-50%, 100%);
+        transition: transform 0.3s ease;
+        z-index: 100;
+      }
+
+      .friend-menu.show {
+        transform: translate(-50%, 0);
+      }
+
+      .friend-menu-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .friend-menu-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 24px;
+        margin-right: 16px;
+        background: linear-gradient(135deg, #f0f0f0, #e6e6e6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .friend-menu-name {
+        font-weight: 600;
+        font-size: 18px;
+      }
+
+      .friend-menu-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .menu-action {
+        padding: 16px;
+        border-radius: 12px;
+        border: none;
+        background: #f8f8f8;
+        color: #222;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+
+      .menu-action.danger {
+        color: #ff3b30;
+      }
+
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        transition: 0.3s ease;
+      }
+
+      .overlay.show {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      @media (max-width: 420px) {
+        body {
+          padding: 12px;
+        }
+        .phone {
+          width: 100%;
+          height: calc(100vh - 24px);
+          border-radius: 16px;
+        }
+      }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="/test/firebase-config.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <div class="phone" role="application" aria-label="More">
+      <header class="topbar">
+        <div class="title">More</div>
+        <button class="profile-btn" id="profileBtn" title="Profile">
+          <!-- simple avatar circle -->
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden
+          >
+            <circle cx="12" cy="8" r="3" stroke="#6b6b6b" stroke-width="1.5" />
+            <path
+              d="M4 20c1.5-4 14-4 16 0"
+              stroke="#6b6b6b"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </header>
+
+      <div class="list" id="list">
+        <!-- Tabs -->
+        <div style="display: flex; gap: 8px; margin-bottom: 12px">
+          <button
+            id="tabFriends"
+            style="
+              flex: 1;
+              padding: 10px;
+              border-radius: 10px;
+              border: 1px solid #eee;
+              background: #fff;
+              font-weight: 700;
+            "
+          >
+            FRIENDS
+          </button>
+          <button
+            id="tabDMS"
+            style="
+              flex: 1;
+              padding: 10px;
+              border-radius: 10px;
+              border: 1px solid #eee;
+              background: transparent;
+            "
+          >
+            DMS
+          </button>
+        </div>
+
+        <!-- Panels -->
+        <div id="friendsPanel">
+          <h2>Friends</h2>
+          <div class="add-friends">
+            <input
+              type="text"
+              id="friendNameInput"
+              placeholder="Enter Display Name"
+            />
+            <button id="addFriendBtn">Add</button>
+          </div>
+          <div class="friends-requests">
+            <h3>Friend Requests</h3>
+            <ul id="friendRequestsList"></ul>
+          </div>
+          <div class="my-friends">
+            <h3>My Friends</h3>
+            <ul id="friendsList"></ul>
+          </div>
+        </div>
+
+        <div id="dmsPanel" style="display: none">
+          <h2>DMS</h2>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <button
+              style="
+                padding: 12px;
+                border-radius: 10px;
+                border: none;
+                background: #1d9bf0;
+                color: #fff;
+                font-weight: 700;
+              "
+              onclick="window.location.href='/test/find.html'"
+            >
+              Open DMS (Find)
+            </button>
+            <button
+              style="
+                padding: 12px;
+                border-radius: 10px;
+                border: none;
+                background: #6b6b6b;
+                color: #fff;
+                font-weight: 700;
+              "
+              onclick="window.location.href='/test/cm/cp-1.html'"
+            >
+              Open Chats
+            </button>
+            <div class="card" style="min-height: 120px">
+              Quick DMS actions and shortcuts will appear here.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="bnav" aria-label="Community bottom navigation">
+        <button id="navChats">Chats</button>
+        <button id="navStatus">Status</button>
+        <button id="navPosts">Posts</button>
+        <button class="active" id="navMore">...</button>
+      </nav>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="friend-menu" id="friendMenu">
+      <div class="friend-menu-header">
+        <div class="friend-menu-avatar" id="menuAvatar"></div>
+        <div class="friend-menu-name" id="menuName"></div>
+      </div>
+      <div class="friend-menu-actions">
+        <button class="menu-action" onclick="handleFriendAction('chat')">
+          <i class="fas fa-comment"></i> Chat
+        </button>
+        <button class="menu-action" onclick="handleFriendAction('call')">
+          <i class="fas fa-phone"></i> Call
+        </button>
+        <button class="menu-action" onclick="handleFriendAction('group')">
+          <i class="fas fa-users"></i> Add to Group
+        </button>
+        <button
+          class="menu-action danger"
+          onclick="handleFriendAction('remove')"
+        >
+          <i class="fas fa-user-minus"></i> Remove Friend
+        </button>
+        <button
+          class="menu-action danger"
+          onclick="handleFriendAction('block')"
+        >
+          <i class="fas fa-ban"></i> Block
+        </button>
+        <button class="menu-action" onclick="handleFriendAction('report')">
+          <i class="fas fa-flag"></i> Report
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // nav actions
+      document.getElementById("navChats").addEventListener("click", () => {
+        window.location.href = "cp-1.html";
+      });
+      document.getElementById("navStatus").addEventListener("click", () => {
+        window.location.href = "cp-2.html";
+      });
+      document.getElementById("navPosts").addEventListener("click", () => {
+        window.location.href = "cp-3.html";
+      });
+      document
+        .getElementById("navMore")
+        .addEventListener("click", () => alert("Already on More"));
+
+      // profile button (placeholder)
+      document.getElementById("profileBtn").addEventListener("click", () => {
+        window.location.href = "../profile.html";
+      });
+    </script>
+    <script>
+      const usersRef = firebase.firestore().collection("users");
+      document.addEventListener("DOMContentLoaded", () => {
+        const requestsList = document.getElementById("friendRequestsList");
+        const friendsList = document.getElementById("friendsList");
+        const friendInput = document.getElementById("friendNameInput");
+        const addBtn = document.getElementById("addFriendBtn");
+        const friendMenu = document.getElementById("friendMenu");
+        const overlay = document.getElementById("overlay");
+
+        let activeFriend = null;
+        function showFriendMenu(friendName) {
+          activeFriend = friendName;
+          document.getElementById("menuAvatar").textContent =
+            friendName.charAt(0) || "?";
+          document.getElementById("menuName").textContent = friendName;
+          friendMenu.classList.add("show");
+          overlay.classList.add("show");
+        }
+        function hideFriendMenu() {
+          friendMenu.classList.remove("show");
+          overlay.classList.remove("show");
+          setTimeout(() => (activeFriend = null), 200);
+        }
+        overlay.addEventListener("click", hideFriendMenu);
+        window.showFriendMenu = showFriendMenu;
+
+        // Add friend request with guards
+        addBtn.addEventListener("click", async () => {
+          const targetName = friendInput.value.trim();
+          if (!targetName) return alert("Enter a display name");
+
+          const currentUser = firebase.auth().currentUser;
+          if (!currentUser) return alert("Please sign in first");
+
+          // read current user's doc
+          const myDocSnap = await usersRef.doc(currentUser.uid).get();
+          const myData = myDocSnap.exists ? myDocSnap.data() : {};
+          const myName =
+            myData.displayName ||
+            currentUser.displayName ||
+            currentUser.email ||
+            "You";
+
+          // prevent self-add (by displayName)
+          if (targetName === myName) return alert("You cannot add yourself");
+
+          // find target user
+          const snap = await usersRef
+            .where("displayName", "==", targetName)
+            .get();
+          if (snap.empty) return alert("No user found with that name");
+
+          const targetDoc = snap.docs[0];
+          const targetId = targetDoc.id;
+          const targetData = targetDoc.data() || {};
+
+          // prevent adding someone already in my friends
+          const myFriends = Array.isArray(myData.friends) ? myData.friends : [];
+          if (myFriends.includes(targetName))
+            return alert(`${targetName} is already your friend`);
+
+          // prevent sending duplicate request if already sent
+          const targetRequests = Array.isArray(targetData.requests)
+            ? targetData.requests
+            : [];
+          if (targetRequests.includes(myName))
+            return alert(`Friend request already sent to ${targetName}`);
+
+          // if the target already requested me, auto-accept (mutual)
+          const myRequests = Array.isArray(myData.requests)
+            ? myData.requests
+            : [];
+          if (myRequests.includes(targetName)) {
+            // Mutual: accept immediately
+            await handleRequest(targetName, true);
+            friendInput.value = "";
+            return alert(`${targetName} was requesting you — accepted.`);
+          }
+
+          // finally, send request
+          await usersRef.doc(targetId).update({
+            requests: firebase.firestore.FieldValue.arrayUnion(myName),
+          });
+
+          alert(`Friend request sent to ${targetName}`);
+          friendInput.value = "";
+        });
+
+        // Accept / Reject friend request (safe checks)
+        async function handleRequest(reqName, accept) {
+          const user = firebase.auth().currentUser;
+          if (!user) return alert("Please sign in");
+
+          try {
+            // find requester by displayName
+            const snap = await usersRef
+              .where("displayName", "==", reqName)
+              .get();
+            const myDocSnap = await usersRef.doc(user.uid).get();
+            const myData = myDocSnap.exists ? myDocSnap.data() : {};
+            const myName =
+              myData.displayName || user.displayName || user.email || "You";
+            const myFriends = Array.isArray(myData.friends)
+              ? myData.friends
+              : [];
+
+            if (snap.empty) {
+              // requester not found: just remove the stale request
+              await usersRef.doc(user.uid).update({
+                requests: firebase.firestore.FieldValue.arrayRemove(reqName),
+              });
+              return alert("Request removed (user not found).");
+            }
+
+            const requesterDoc = snap.docs[0];
+            const requesterId = requesterDoc.id;
+            const requesterData = requesterDoc.data() || {};
+            const requesterFriends = Array.isArray(requesterData.friends)
+              ? requesterData.friends
+              : [];
+
+            // already friends check
+            const alreadyFriends =
+              myFriends.includes(reqName) || requesterFriends.includes(myName);
+
+            if (accept) {
+              if (!alreadyFriends) {
+                await Promise.all([
+                  usersRef.doc(user.uid).update({
+                    friends: firebase.firestore.FieldValue.arrayUnion(reqName),
+                    requests:
+                      firebase.firestore.FieldValue.arrayRemove(reqName),
+                  }),
+                  usersRef.doc(requesterId).update({
+                    friends: firebase.firestore.FieldValue.arrayUnion(myName),
+                    // optionally remove any existing requests to avoid stale state
+                    requests: firebase.firestore.FieldValue.arrayRemove(myName),
+                  }),
+                ]);
+                alert(`${reqName} added to friends`);
+              } else {
+                // if already friends, just remove the request
+                await usersRef.doc(user.uid).update({
+                  requests: firebase.firestore.FieldValue.arrayRemove(reqName),
+                });
+                alert(`${reqName} is already a friend`);
+              }
+            } else {
+              // reject: remove the request only
+              await usersRef.doc(user.uid).update({
+                requests: firebase.firestore.FieldValue.arrayRemove(reqName),
+              });
+              alert(`Request from ${reqName} rejected`);
+            }
+          } catch (err) {
+            console.error("handleRequest error", err);
+            alert("Could not process request");
+          }
+        }
+        window.handleRequest = handleRequest;
+
+        // Friend action menu handlers
+        async function handleFriendAction(action) {
+          if (!activeFriend) return;
+          const user = firebase.auth().currentUser;
+          if (!user) return alert("Please sign in");
+
+          try {
+            // Resolve friend UID
+            const friendSnap = await usersRef
+              .where("displayName", "==", activeFriend)
+              .get();
+            const friendUid = friendSnap.empty ? null : friendSnap.docs[0].id;
+            const friendDoc = friendUid
+              ? friendSnap.docs[0].data()
+              : { displayName: activeFriend };
+
+            switch (action) {
+              case "chat":
+                createOrOpenChat(activeFriend);
+                break;
+              case "call":
+                alert("Calling feature coming soon");
+                break;
+              case "group":
+                alert("Add to group feature coming soon");
+                break;
+              case "remove":
+                if (!confirm(`Remove ${activeFriend} from friends?`)) break;
+                await usersRef.doc(user.uid).update({
+                  friends:
+                    firebase.firestore.FieldValue.arrayRemove(activeFriend),
+                });
+                if (friendUid) {
+                  await usersRef.doc(friendUid).update({
+                    friends: firebase.firestore.FieldValue.arrayRemove(
+                      user.displayName || user.email
+                    ),
+                  });
+                }
+                alert("Friend removed");
+                break;
+              case "block":
+                if (
+                  !confirm(
+                    `Block ${activeFriend}? They will no longer be able to message you.`
+                  )
+                )
+                  break;
+                if (friendUid) {
+                  // add to your blocked list
+                  await usersRef.doc(user.uid).update({
+                    blocked:
+                      firebase.firestore.FieldValue.arrayUnion(friendUid),
+                  });
+                  // optionally remove friend link
+                  await usersRef.doc(user.uid).update({
+                    friends:
+                      firebase.firestore.FieldValue.arrayRemove(activeFriend),
+                  });
+                  // also attempt to remove you from their friends list
+                  await usersRef.doc(friendUid).update({
+                    friends: firebase.firestore.FieldValue.arrayRemove(
+                      user.displayName || user.email
+                    ),
+                  });
+                  alert("User blocked");
+                } else {
+                  // fallback: add blocked-by-name
+                  await usersRef.doc(user.uid).update({
+                    blockedNames:
+                      firebase.firestore.FieldValue.arrayUnion(activeFriend),
+                  });
+                  alert("User blocked (by name)");
+                }
+                break;
+              case "report":
+                const reason = prompt(
+                  "Please enter a short reason for reporting (abuse/cheating/spam):"
+                );
+                if (!reason) return alert("Report cancelled");
+                await firebase
+                  .firestore()
+                  .collection("reports")
+                  .add({
+                    reporterId: user.uid,
+                    reportedUid: friendUid || null,
+                    reportedName: activeFriend,
+                    reason,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                  });
+                alert("Report submitted. Our team will review it.");
+                break;
+            }
+          } catch (err) {
+            console.error("handleFriendAction error", err);
+            alert("Could not complete action");
+          } finally {
+            hideFriendMenu();
+          }
+        }
+        window.handleFriendAction = handleFriendAction;
+
+        function renderFriendsList(friends) {
+          friendsList.innerHTML = "";
+          if (!friends || friends.length === 0) {
+            friendsList.innerHTML =
+              "<li class='friend-item'>No friends yet</li>";
+            return;
+          }
+          friends.forEach((name) => {
+            const li = document.createElement("li");
+            li.className = "friend-item";
+            li.innerHTML = `
+          <div class="friend-avatar">${(name && name.charAt(0)) || "?"}</div>
+          <div class="friend-info">
+            <div class="friend-name">${name}</div>
+            <div class="friend-status">Online</div>
+          </div>
+        `;
+            li.addEventListener("click", () => showFriendMenu(name));
+            friendsList.appendChild(li);
+          });
+        }
+
+        // Snapshot listener
+        firebase.auth().onAuthStateChanged((user) => {
+          if (!user) {
+            requestsList.innerHTML =
+              "<li class='friend-item'>Sign in to see requests</li>";
+            friendsList.innerHTML =
+              "<li class='friend-item'>Sign in to see friends</li>";
+            return;
+          }
+          usersRef.doc(user.uid).onSnapshot(
+            (doc) => {
+              const data = doc.exists ? doc.data() : {};
+              const requests = Array.isArray(data.requests)
+                ? data.requests
+                : [];
+              const friends = Array.isArray(data.friends) ? data.friends : [];
+
+              // Requests
+              requestsList.innerHTML = "";
+              if (requests.length === 0) {
+                requestsList.innerHTML =
+                  "<li class='friend-item'>No pending requests</li>";
+              } else {
+                requests.forEach((req) => {
+                  const li = document.createElement("li");
+                  li.className = "friend-item";
+                  li.innerHTML = `
+              <div class="friend-avatar">${(req && req.charAt(0)) || "?"}</div>
+              <div class="friend-info">
+                <div class="friend-name">${req}</div>
+              </div>
+              <div class="friend-actions">
+                <button class="accept-btn">Accept</button>
+                <button class="reject-btn">Reject</button>
+              </div>
+            `;
+                  const acceptBtn = li.querySelector(".accept-btn");
+                  const rejectBtn = li.querySelector(".reject-btn");
+                  acceptBtn.addEventListener("click", () =>
+                    handleRequest(req, true)
+                  );
+                  rejectBtn.addEventListener("click", () =>
+                    handleRequest(req, false)
+                  );
+                  requestsList.appendChild(li);
+                });
+              }
+
+              // Friends
+              renderFriendsList(friends);
+            },
+            (err) => console.error("usersRef onSnapshot error", err)
+          );
+        });
+        async function createOrOpenChat(friendName) {
+          const user = firebase.auth().currentUser;
+          if (!user) return alert("Please sign in first");
+
+          const usersRef = firebase.firestore().collection("users");
+          const chatsRef = firebase.firestore().collection("chats");
+
+          const myDoc = await usersRef.doc(user.uid).get();
+          const myData = myDoc.data();
+          const myName = myData.displayName;
+
+          const friendSnap = await usersRef
+            .where("displayName", "==", friendName)
+            .get();
+          if (friendSnap.empty) return alert("Friend not found");
+          const friendUid = friendSnap.docs[0].id;
+
+          const chatId = [user.uid, friendUid].sort().join("_");
+
+          // Create chat doc if not exists
+          await chatsRef.doc(chatId).set(
+            {
+              participants: [user.uid, friendUid],
+              names: [myName, friendName],
+              lastMessage: "",
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+
+          // Redirect to chat page with chatId
+          window.location.href = `cp-1.html?chatId=${chatId}`;
+        }
+      });
+    </script>
+    <script>
+      // Tab switching for Friends / DMS
+      const tabFriends = document.getElementById("tabFriends");
+      const tabDMS = document.getElementById("tabDMS");
+      const friendsPanel = document.getElementById("friendsPanel");
+      const dmsPanel = document.getElementById("dmsPanel");
+
+      function showFriends() {
+        tabFriends.style.background = "#fff";
+        tabDMS.style.background = "transparent";
+        friendsPanel.style.display = "block";
+        dmsPanel.style.display = "none";
+      }
+      function showDMS() {
+        tabFriends.style.background = "transparent";
+        tabDMS.style.background = "#fff";
+        friendsPanel.style.display = "none";
+        dmsPanel.style.display = "block";
+      }
+
+      tabFriends.addEventListener("click", showFriends);
+      tabDMS.addEventListener("click", showDMS);
+    </script>
+  </body>
+</html>

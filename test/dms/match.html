@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Match</title>
+    <link rel="stylesheet" href="../css/match.css" />
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="../firebase-config.js"></script>
+    <style>
+      .match-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .match-info-display {
+        display: flex;
+        justify-content: space-around;
+        padding: 20px;
+        background: #f0f0f0;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+      .player-info {
+        text-align: center;
+        flex: 1;
+      }
+      .player-photo {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        margin: 0 auto 10px;
+        object-fit: cover;
+      }
+      .player-name {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .player-stat {
+        font-size: 12px;
+        color: #666;
+      }
+      .vs-text {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #1d9bf0;
+        font-size: 24px;
+        margin: 0 10px;
+      }
+      .match-timer {
+        text-align: center;
+        font-size: 32px;
+        font-weight: bold;
+        margin: 20px 0;
+        color: #1d9bf0;
+      }
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .main-btn {
+        flex: 1;
+        padding: 12px;
+        background: #1d9bf0;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .main-btn:hover {
+        background: #1a8cd8;
+      }
+      .forfeit-btn {
+        background: #e74c3c;
+      }
+      .forfeit-btn:hover {
+        background: #c0392b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="match-container">
+      <h2>Match in Progress</h2>
+
+      <div id="matchInfo" class="match-info-display">
+        <div class="loading">Loading...</div>
+      </div>
+
+      <div class="match-timer" id="matchTimer">00:00</div>
+
+      <div class="action-buttons">
+        <button class="main-btn" id="endMatchBtn">End Match</button>
+        <button class="main-btn forfeit-btn" id="forfeitBtn">Forfeit</button>
+      </div>
+    </div>
+
+    <script>
+      const firestore = firebase.firestore();
+      const roomsRef = firestore.collection("rooms");
+      const matchesRef = firestore.collection("matches");
+      const usersRef = firestore.collection("users");
+
+      let currentUser = null;
+      let currentRoom = null;
+      let matchRecord = null;
+      let matchStartTime = null;
+      let matchId = null;
+      let timerInterval = null;
+
+      firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+          window.location.href = "../signin.html";
+          return;
+        }
+
+        currentUser = user;
+        const roomUID = sessionStorage.getItem("roomUID");
+
+        if (!roomUID) {
+          alert("No room found");
+          window.location.href = "findmatch.html";
+          return;
+        }
+
+        try {
+          // Get room and user data
+          const roomDoc = await roomsRef.doc(roomUID).get();
+          const userDoc = await usersRef.doc(user.uid).get();
+          const userData = userDoc.data();
+
+          if (!roomDoc.exists) {
+            alert("Room not found");
+            window.location.href = "findmatch.html";
+            return;
+          }
+
+          currentRoom = roomDoc.data();
+          matchStartTime = currentRoom.startedAt?.toDate() || new Date();
+
+          // Get opponent data
+          let opponentData = null;
+          if (currentRoom.opponent) {
+            const opDoc = await usersRef.doc(currentRoom.opponent.id).get();
+            opponentData = opDoc.data();
+          }
+
+          // Create match record
+          const matchData = {
+            roomUID: roomUID,
+            matchType: currentRoom.matchType || "custom",
+            creatorId: currentRoom.creatorId,
+            creatorName: currentRoom.creatorName,
+            creatorRank: userData.rank || 0,
+            creatorTrophies: userData.trophies || 0,
+            opponentId: currentRoom.opponent?.id || null,
+            opponentName: opponentData?.displayName || "Unknown",
+            opponentRank: opponentData?.rank || 0,
+            opponentTrophies: opponentData?.trophies || 0,
+            status: "in-progress",
+            startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          };
+
+          const matchRef = await matchesRef.add(matchData);
+          matchId = matchRef.id;
+          matchRecord = matchData;
+          sessionStorage.setItem("matchId", matchId);
+
+          // Display match info
+          const matchInfoDiv = document.getElementById("matchInfo");
+          matchInfoDiv.innerHTML = `
+                    <div class="player-info">
+                        <img src="${
+                          userData.profilePhoto ||
+                          "https://via.placeholder.com/60"
+                        }" alt="${userData.displayName}" class="player-photo">
+                        <div class="player-name">${userData.displayName}</div>
+                        <div class="player-stat">Rank: #${
+                          userData.rank || "Unranked"
+                        }</div>
+                        <div class="player-stat">🏆 ${
+                          userData.trophies || 0
+                        }</div>
+                    </div>
+                    <div class="vs-text">VS</div>
+                    <div class="player-info">
+                        <img src="${
+                          opponentData?.profilePhoto ||
+                          "https://via.placeholder.com/60"
+                        }" alt="${
+            opponentData?.displayName
+          }" class="player-photo">
+                        <div class="player-name">${
+                          opponentData?.displayName || "Waiting..."
+                        }</div>
+                        <div class="player-stat">Rank: #${
+                          opponentData?.rank || "Unranked"
+                        }</div>
+                        <div class="player-stat">🏆 ${
+                          opponentData?.trophies || 0
+                        }</div>
+                    </div>
+                `;
+
+          startMatchTimer();
+        } catch (error) {
+          console.error("Error loading match:", error);
+          alert("Error: " + error.message);
+        }
+      });
+
+      function startMatchTimer() {
+        timerInterval = setInterval(() => {
+          const elapsed = Math.floor(
+            (Date.now() - matchStartTime.getTime()) / 1000
+          );
+          const mins = Math.floor(elapsed / 60);
+          const secs = elapsed % 60;
+          document.getElementById("matchTimer").textContent = `${String(
+            mins
+          ).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+        }, 1000);
+      }
+
+      document.getElementById("endMatchBtn").addEventListener("click", () => {
+        // Go to result selection page
+        clearInterval(timerInterval);
+        window.location.href = "result.html";
+      });
+
+      document
+        .getElementById("forfeitBtn")
+        .addEventListener("click", async () => {
+          if (
+            !confirm(
+              "Are you sure you want to forfeit? You will lose this match."
+            )
+          )
+            return;
+
+          clearInterval(timerInterval);
+
+          try {
+            // Update match as forfeited
+            if (matchId) {
+              await matchesRef.doc(matchId).update({
+                status: "forfeited",
+                forfeitedBy: currentUser.uid,
+                endedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              });
+            }
+
+            // Award win to opponent
+            sessionStorage.setItem("matchResult", "forfeit");
+            window.location.href = "result.html";
+          } catch (error) {
+            console.error("Error forfeiting:", error);
+            alert("Error: " + error.message);
+          }
+        });
+
+      window.addEventListener("beforeunload", () => {
+        if (timerInterval) clearInterval(timerInterval);
+      });
+    </script>
+  </body>
+</html>

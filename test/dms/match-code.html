@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Join Match by Code</title>
+    <link rel="stylesheet" href="../css/matchmaking.css" />
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="../firebase-config.js"></script>
+    <style>
+      .matchmaking-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .form-group {
+        margin: 20px 0;
+      }
+      .code-input {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+      .submit-btn {
+        width: 100%;
+        padding: 12px;
+        background: #1d9bf0;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 16px;
+      }
+      .submit-btn:hover {
+        background: #1a8cd8;
+      }
+      .room-info {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f0f0f0;
+        border-radius: 8px;
+        display: none;
+      }
+      .room-info.show {
+        display: block;
+      }
+      .creator-section {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      .creator-photo {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      .creator-info {
+        flex: 1;
+      }
+      .creator-name {
+        font-weight: bold;
+        font-size: 16px;
+      }
+      .creator-rank {
+        color: #666;
+        font-size: 12px;
+      }
+      .status-msg {
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+      }
+      .error-msg {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .success-msg {
+        background: #d4edda;
+        color: #155724;
+      }
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .join-btn {
+        flex: 1;
+        padding: 12px;
+        background: #1d9bf0;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .join-btn:hover {
+        background: #1a8cd8;
+      }
+      .back-btn {
+        padding: 12px 20px;
+        background: #ccc;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="matchmaking-container">
+      <h2>Join Match by Code</h2>
+
+      <div class="form-group">
+        <form id="joinForm">
+          <input
+            type="text"
+            id="roomCode"
+            class="code-input"
+            placeholder="Enter room code (e.g., ROOM_ABC123)"
+            required
+            maxlength="20"
+          />
+          <button type="submit" class="submit-btn">Search Room</button>
+        </form>
+      </div>
+
+      <div id="roomInfo" class="room-info">
+        <div id="roomContent"></div>
+        <div class="action-buttons">
+          <button class="join-btn" id="joinBtn">Join as Player</button>
+          <button class="join-btn" style="background: #9b59b6" id="spectateBtn">
+            Join as Spectator
+          </button>
+        </div>
+      </div>
+
+      <div id="statusMsg"></div>
+
+      <button
+        class="back-btn"
+        onclick="window.location.href='matchmaking.html'"
+        style="width: 100%; margin-top: 20px"
+      >
+        Go Back
+      </button>
+    </div>
+
+    <script>
+      const firestore = firebase.firestore();
+      const roomsRef = firestore.collection("rooms");
+      const usersRef = firestore.collection("users");
+      let currentUser = null;
+      let foundRoom = null;
+      let foundRoomUID = null;
+
+      firebase.auth().onAuthStateChanged((user) => {
+        if (!user) {
+          window.location.href = "../signin.html";
+          return;
+        }
+        currentUser = user;
+      });
+
+      document
+        .getElementById("joinForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const code = document
+            .getElementById("roomCode")
+            .value.toUpperCase()
+            .trim();
+
+          if (!code) {
+            showError("Please enter a room code");
+            return;
+          }
+
+          try {
+            showMessage("Searching for room...", "info");
+
+            // Check if room exists
+            const roomDoc = await roomsRef.doc(code).get();
+
+            if (!roomDoc.exists) {
+              showError("Room not found. Please check the code.");
+              return;
+            }
+
+            foundRoom = roomDoc.data();
+            foundRoomUID = code;
+
+            if (foundRoom.status === "disbanded") {
+              showError("This room has been disbanded.");
+              return;
+            }
+
+            if (foundRoom.status === "started") {
+              showError("This match has already started.");
+              return;
+            }
+
+            // Display room info
+            displayRoomInfo(foundRoom, code);
+          } catch (error) {
+            console.error("Error searching room:", error);
+            showError("Error searching room: " + error.message);
+          }
+        });
+
+      async function displayRoomInfo(room, roomUID) {
+        const creatorDoc = await usersRef.doc(room.creatorId).get();
+        const creatorData = creatorDoc.data();
+
+        const html = `
+                <h3>Room Found!</h3>
+                <div class="creator-section">
+                    <img src="${
+                      creatorData.profilePhoto ||
+                      "https://via.placeholder.com/80"
+                    }" alt="Creator" class="creator-photo">
+                    <div class="creator-info">
+                        <div class="creator-name">${
+                          creatorData.displayName
+                        }</div>
+                        <div class="creator-rank">🏆 ${
+                          creatorData.trophies
+                        } Trophies</div>
+                        <div class="creator-rank">Rank: #${
+                          creatorData.rank || "Unranked"
+                        }</div>
+                    </div>
+                </div>
+                <p><strong>Room Code:</strong> ${roomUID}</p>
+                <p><strong>Status:</strong> ${room.status}</p>
+                <p><strong>Players:</strong> ${
+                  room.opponent ? "2/2" : "1/2"
+                }</p>
+            `;
+
+        document.getElementById("roomContent").innerHTML = html;
+        document.getElementById("roomInfo").classList.add("show");
+        document.getElementById("statusMsg").innerHTML = "";
+      }
+
+      document.getElementById("joinBtn").addEventListener("click", async () => {
+        if (!currentUser || !foundRoomUID) return;
+
+        try {
+          showMessage("Joining match...", "info");
+
+          const userDoc = await usersRef.doc(currentUser.uid).get();
+          const userData = userDoc.data();
+
+          if (foundRoom.opponent) {
+            showError(
+              "This room already has an opponent. Join as spectator instead."
+            );
+            return;
+          }
+
+          // Update room with opponent
+          await roomsRef.doc(foundRoomUID).update({
+            opponent: {
+              id: currentUser.uid,
+              displayName: userData.displayName,
+            },
+          });
+
+          sessionStorage.setItem("roomUID", foundRoomUID);
+          window.location.href = "match.html";
+        } catch (error) {
+          console.error("Error joining room:", error);
+          showError("Error joining room: " + error.message);
+        }
+      });
+
+      document
+        .getElementById("spectateBtn")
+        .addEventListener("click", async () => {
+          if (!currentUser || !foundRoomUID) return;
+
+          try {
+            showMessage("Joining as spectator...", "info");
+
+            // Add to spectators array
+            await roomsRef.doc(foundRoomUID).update({
+              spectators: firebase.firestore.FieldValue.arrayUnion(
+                currentUser.uid
+              ),
+            });
+
+            sessionStorage.setItem("roomUID", foundRoomUID);
+            sessionStorage.setItem("isSpectator", "true");
+            window.location.href = "match.html";
+          } catch (error) {
+            console.error("Error joining as spectator:", error);
+            showError("Error joining: " + error.message);
+          }
+        });
+
+      function showError(message) {
+        document.getElementById(
+          "statusMsg"
+        ).innerHTML = `<div class="status-msg error-msg">${message}</div>`;
+        document.getElementById("roomInfo").classList.remove("show");
+      }
+
+      function showMessage(message, type = "info") {
+        const className = type === "error" ? "error-msg" : "success-msg";
+        document.getElementById(
+          "statusMsg"
+        ).innerHTML = `<div class="status-msg ${className}">${message}</div>`;
+      }
+    </script>
+  </body>
+</html>

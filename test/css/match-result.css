@@ -1,0 +1,71 @@
+body {
+  background: #f5f7fa;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.matchmaking-container {
+  max-width: 400px;
+  margin: 60px auto;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.result-box {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  padding: 28px 20px;
+  text-align: center;
+  margin: 0 auto;
+  max-width: 340px;
+  position: relative;
+}
+
+.opponent-photo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 8px;
+  border: 2px solid #007bff;
+}
+
+.opponent-name {
+  font-size: 17px;
+  font-weight: bold;
+  color: #222;
+}
+
+.trophy-update {
+  font-size: 15px;
+  color: #27ae60;
+  margin-top: 4px;
+}
+
+.match-type {
+  font-size: 15px;
+  color: #555;
+  margin-top: 12px;
+}
+
+.back-btn {
+  font-size: 16px;
+  padding: 12px 0;
+  border: none;
+  border-radius: 8px;
+  background: #eee;
+  color: #333;
+  cursor: pointer;
+  margin-top: 18px;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.back-btn:hover {
+  background: #ddd;
+}

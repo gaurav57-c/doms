@@ -1,0 +1,81 @@
+body {
+  background: #f5f7fa;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  font-size: 20px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  max-width: 520px;
+  width: 100%;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+  padding: 56px 36px;
+  text-align: center;
+  margin: 0;
+}
+
+h2 {
+  margin-bottom: 40px;
+  font-size: 34px;
+  color: #222;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-bottom: 28px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 22px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button[type="submit"] {
+  padding: 18px 0;
+  font-size: 22px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #007bff 60%, #00c6ff 100%);
+  color: #fff;
+  cursor: pointer;
+  margin-top: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: background 0.2s, transform 0.2s;
+}
+
+button[type="submit"]:hover {
+  background: linear-gradient(90deg, #0056b3 60%, #0096c7 100%);
+  transform: translateY(-2px) scale(1.04);
+}
+
+#signinRedirect {
+  margin-top: 10px;
+  padding: 18px 0;
+  font-size: 22px;
+  border: none;
+  border-radius: 8px;
+  background: #eee;
+  color: #333;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+#signinRedirect:hover {
+  background: #ddd;
+}

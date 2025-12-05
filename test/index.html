@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>DMS - Register</title>
+    <link rel="stylesheet" href="css/login.css" />
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+    <script src="firebase-config.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Register to DMS</h2>
+      <form id="registerForm">
+        <input
+          type="text"
+          id="displayName"
+          placeholder="Display Name (unique)"
+          required
+        />
+        <input type="text" id="fullName" placeholder="Full Name" required />
+        <input type="email" id="email" placeholder="Email" required />
+        <input
+          type="password"
+          id="password"
+          placeholder="Password (min 6 chars)"
+          required
+          minlength="6"
+        />
+        <input
+          type="text"
+          id="username"
+          placeholder="Username (unique)"
+          required
+        />
+        <input type="file" id="profilePicture" accept="image/*" />
+        <input type="text" id="country" placeholder="Country" required />
+        <input type="text" id="state" placeholder="State" required />
+        <input type="text" id="district" placeholder="District" required />
+        <input type="text" id="city" placeholder="City" required />
+        <input type="text" id="pincode" placeholder="Pincode" required />
+        <button type="submit">Register</button>
+        <span id="errorMsg" style="color: red"></span>
+      </form>
+      <button id="signinRedirect">Already registered? Sign In</button>
+    </div>
+
+    <script src="register.js"></script>
+  </body>
+</html>

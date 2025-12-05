@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DMS - Home</title>
+    <link rel="stylesheet" href="/test/css/base.css" />
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding-top: 60px;
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+      }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 260px;
+        height: 100%;
+        background: #fff;
+        padding: 16px;
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.06);
+        z-index: 60;
+        overflow: auto;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+      .sidebar.show {
+        transform: translateX(0);
+      }
+      .sidebar button {
+        display: block;
+        width: 100%;
+        margin-bottom: 12px;
+        padding: 12px;
+        border: 1px solid #ddd;
+        background: #f9f9f9;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .sidebar button:hover {
+        background: #e8e8e8;
+      }
+      .header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: #fff;
+        z-index: 100;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 16px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .menu-icon {
+        font-size: 24px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .logo {
+        font-weight: bold;
+        font-size: 20px;
+      }
+      .filter-icon {
+        font-size: 20px;
+        cursor: pointer;
+      }
+      .trending-box {
+        margin: 20px 16px;
+        padding: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      }
+      .match-list {
+        padding: 16px;
+      }
+      .match-box {
+        background: #fff;
+        padding: 16px;
+        margin-bottom: 12px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .match-box:hover {
+        transform: scale(1.02);
+      }
+      .floating-btn {
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #1d9bf0;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+      }
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: #fff;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 50;
+      }
+      .nav-icon {
+        font-size: 24px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <button
+        onclick="window.location.href='profile.html'"
+        style="margin-top: 0"
+      >
+        View Profile
+      </button>
+      <button onclick="window.location.href='cm/cp-4.html'">Community</button>
+      <button onclick="window.location.href='dms/history.html'">
+        Match History
+      </button>
+      <button onclick="window.location.href='/test/admin.html'">Admin</button>
+      <hr style="margin: 12px 0; border: none; border-top: 1px solid #ddd" />
+      <button onclick="closeSidebar()">Close Menu</button>
+    </aside>
+
+    <!-- Header -->
+    <header class="header">
+      <div id="menuBtn" class="menu-icon" onclick="toggleSidebar()">☰</div>
+      <div class="logo">vs</div>
+      <div class="filter-icon"></div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="trending-box">
+      <h3>Available Matches</h3>
+      <p>Live matches from community</p>
+    </div>
+
+    <div class="match-list" id="matchList">
+      <div class="match-box">Loading...</div>
+    </div>
+
+    <div class="floating-btn" id="goToMatchmaking">+</div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <div class="nav-icon">⚔️</div>
+      <div
+        class="nav-icon"
+        onclick="window.location.href='/test/dms/leaderboard.html'"
+      >
+        🏆
+      </div>
+    </nav>
+
+    <script>
+      // Sidebar toggle
+      function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        sidebar.classList.toggle("show");
+      }
+
+      function closeSidebar() {
+        document.getElementById("sidebar").classList.remove("show");
+      }
+
+      // Close sidebar when clicking outside
+      document.addEventListener("click", (e) => {
+        const sidebar = document.getElementById("sidebar");
+        const menuBtn = document.getElementById("menuBtn");
+        if (!sidebar.contains(e.target) && e.target !== menuBtn) {
+          sidebar.classList.remove("show");
+        }
+      });
+
+      // Prevent sidebar from closing when clicking inside it
+      document.getElementById("sidebar").addEventListener("click", (e) => {
+        e.stopPropagation();
+      });
+
+      // Floating button
+      document
+        .getElementById("goToMatchmaking")
+        .addEventListener("click", () => {
+          window.location.href = "../test/dms/matchmaking.html";
+        });
+
+      // Load matches from Firestore
+      document.addEventListener("DOMContentLoaded", () => {
+        if (typeof firestore === "undefined") {
+          console.error("Firestore not initialized");
+          return;
+        }
+
+        const matchList = document.getElementById("matchList");
+
+        firestore
+          .collection("rooms")
+          .where("status", "==", "waiting")
+          .orderBy("createdAt", "desc")
+          .limit(20)
+          .onSnapshot(
+            (snapshot) => {
+              if (snapshot.empty) {
+                matchList.innerHTML =
+                  '<div class="match-box">No available matches</div>';
+                return;
+              }
+
+              matchList.innerHTML = "";
+
+              snapshot.forEach((doc) => {
+                const room = doc.data();
+                const hostName = room.creatorName || "Unknown";
+                const playerCount = (room.opponent ? 2 : 1) + " players";
+
+                const box = document.createElement("div");
+                box.className = "match-box";
+                box.innerHTML = `
+                  <div><strong>${hostName}'s Match</strong></div>
+                  <div>${playerCount}</div>
+                  <div><small>Room: ${doc.id}</small></div>
+                `;
+
+                box.addEventListener("click", () => {
+                  window.location.href = `/test/dms/match-code.html?roomId=${encodeURIComponent(
+                    doc.id
+                  )}`;
+                });
+
+                matchList.appendChild(box);
+              });
+            },
+            (err) => {
+              console.error("Error loading matches:", err);
+              matchList.innerHTML =
+                '<div class="match-box">Error loading matches</div>';
+            }
+          );
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Match History</title>
+    <link rel="stylesheet" href="../css/history.css" />
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="../firebase-config.js"></script>
+    <style>
+      .history-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .match-item {
+        padding: 15px;
+        background: #f0f0f0;
+        border-radius: 8px;
+        margin: 10px 0;
+      }
+      .match-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .match-result {
+        font-weight: bold;
+        font-size: 16px;
+      }
+      .win {
+        color: green;
+      }
+      .loss {
+        color: red;
+      }
+      .match-details {
+        font-size: 13px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="history-container">
+      <h2>Match History</h2>
+      <div id="historyList">
+        <p>Loading...</p>
+      </div>
+      <button onclick="window.location.href='findmatch.html'" class="back-btn">
+        Back
+      </button>
+    </div>
+
+    <script>
+      const usersRef = firestore.collection("users");
+      let currentUser = null;
+
+      firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+          window.location.href = "../signin.html";
+          return;
+        }
+
+        currentUser = user;
+        const userDoc = await usersRef.doc(user.uid).get();
+        const userData = userDoc.data();
+        const matchHistory = userData.matchHistory || [];
+
+        if (matchHistory.length === 0) {
+          document.getElementById("historyList").innerHTML =
+            "<p>No matches yet</p>";
+          return;
+        }
+
+        const historyHTML = matchHistory
+          .sort((a, b) => b.matchedAt - a.matchedAt)
+          .map((match) => {
+            const date = match.matchedAt.toDate().toLocaleDateString();
+            const time = match.matchedAt.toDate().toLocaleTimeString();
+            const resultClass = match.result === "win" ? "win" : "loss";
+            const resultText = match.result.toUpperCase();
+
+            return `
+                        <div class="match-item">
+                            <div class="match-header">
+                                <div>
+                                    <strong>${match.opponent}</strong>
+                                    <div class="match-details">${match.matchId}</div>
+                                </div>
+                                <div class="match-result ${resultClass}">${resultText}</div>
+                            </div>
+                            <div class="match-details">
+                                <p>Date: ${date} ${time}</p>
+                                <p>Trophies: ${match.trophiesBefore} → ${match.trophiesAfter}</p>
+                            </div>
+                        </div>
+                    `;
+          })
+          .join("");
+
+        document.getElementById("historyList").innerHTML = historyHTML;
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Community — Posts (cp-3)</title>
+    <style>
+      :root {
+        --bg: #fff7e6;
+        --card: #fff;
+        --muted: #6b6b6b;
+        --accent: #1d9bf0;
+        --phone-w: 360px;
+        --safe-bottom: 20px;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: Inter, system-ui, Segoe UI, Roboto, Arial;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #fffdfa 0%, #fff7e6 100%);
+        padding: 20px;
+      }
+      .phone {
+        width: var(--phone-w);
+        height: 780px;
+        background: var(--bg);
+        border-radius: 24px;
+        box-shadow: 0 30px 60px rgba(22, 22, 22, 0.12);
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Header */
+      .topbar {
+        height: 64px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        background: transparent;
+      }
+      .title {
+        font-weight: 600;
+        font-size: 18px;
+        color: #222;
+        text-transform: lowercase;
+      }
+      .search-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: none;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+
+      /* trending slider */
+      .trending {
+        padding: 12px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        background: transparent;
+      }
+      .trending-box {
+        border-radius: 14px;
+        background: linear-gradient(90deg, #fff, #fbf6e9);
+        min-height: 110px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        padding: 10px;
+      }
+      .slides {
+        display: flex;
+        transition: transform 0.35s ease;
+      }
+      .slide {
+        min-width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .dots {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 6px;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.12);
+        cursor: pointer;
+      }
+      .dot.active {
+        background: var(--accent);
+      }
+
+      /* posts list */
+      .list {
+        padding: 12px;
+        overflow: auto;
+        flex: 1;
+        -webkit-overflow-scrolling: touch;
+      }
+      .post-card {
+        background: var(--card);
+        border-radius: 14px;
+        padding: 12px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        box-shadow: 0 6px 18px rgba(15, 15, 15, 0.04);
+      }
+      .avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #f0f0f0, #e6e6e6);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #777;
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .meta {
+        flex: 1;
+        min-width: 0;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .name {
+        font-weight: 600;
+        color: #111;
+      }
+      .time {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .post-text {
+        font-size: 14px;
+        color: var(--muted);
+        margin-top: 8px;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Floating add post button */
+      .fab {
+        position: absolute;
+        right: 18px;
+        bottom: calc(64px + var(--safe-bottom));
+        width: 64px;
+        height: 64px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        font-size: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 20px rgba(29, 155, 240, 0.28);
+        cursor: pointer;
+      }
+
+      /* bottom nav */
+      .bnav {
+        height: 64px;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        gap: 8px;
+        background: transparent;
+      }
+      .bnav button {
+        flex: 1;
+        height: 48px;
+        border-radius: 12px;
+        border: none;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--muted);
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .bnav button.active {
+        background: linear-gradient(
+          90deg,
+          rgba(29, 155, 240, 0.12),
+          transparent
+        );
+        color: var(--accent);
+      }
+
+      /* modal for new post */
+      .modal {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%) scale(0.98);
+        width: 320px;
+        max-width: 90%;
+        background: #fff;
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 0 30px 60px rgba(15, 15, 15, 0.14);
+        display: none;
+        z-index: 60;
+      }
+      .modal.show {
+        display: block;
+        animation: pop 0.14s ease-out;
+      }
+      @keyframes pop {
+        from {
+          transform: translate(-50%, -50%) scale(0.96);
+          opacity: 0;
+        }
+        to {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+        }
+      }
+      .modal h4 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+      }
+      .modal textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid #e8e8e8;
+        outline: none;
+        font-size: 14px;
+        min-height: 80px;
+        resize: vertical;
+      }
+      .modal .actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 10px;
+      }
+      .btn {
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn.ghost {
+        background: transparent;
+        color: var(--muted);
+      }
+
+      @media (max-width: 420px) {
+        body {
+          padding: 12px;
+        }
+        .phone {
+          width: 100%;
+          height: calc(100vh - 24px);
+          border-radius: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="phone" role="application" aria-label="Posts">
+      <header class="topbar">
+        <div class="title">posts</div>
+        <button class="search-btn" id="searchBtn" title="Search">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden
+          >
+            <path
+              d="M21 21l-4.35-4.35"
+              stroke="#333"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <circle
+              cx="11"
+              cy="11"
+              r="6"
+              stroke="#333"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </header>
+
+      <div class="trending" aria-hidden="false">
+        <div class="trending-box" id="trendingBox" title="View trending">
+          <div class="slides" id="slides">
+            <div class="slide">Trending: #DesignSprint — 12k posts</div>
+            <div class="slide">Trending: Viral Video — 2.1M views</div>
+            <div class="slide">Trending: Launch Day — live updates</div>
+          </div>
+          <div class="dots" id="dots">
+            <div class="dot active" data-i="0"></div>
+            <div class="dot" data-i="1"></div>
+            <div class="dot" data-i="2"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="list" id="list">
+        <div class="post-card" tabindex="0">
+          <div class="avatar">AB</div>
+          <div class="meta">
+            <div class="row">
+              <div class="name">Aarav Bhat</div>
+              <div class="time">2h</div>
+            </div>
+            <div class="post-text">
+              Sharing a quick tip on responsive layouts. Use min() for better
+              control across widths.
+            </div>
+          </div>
+        </div>
+
+        <div class="post-card" tabindex="0">
+          <div class="avatar">ML</div>
+          <div class="meta">
+            <div class="row">
+              <div class="name">Maya L.</div>
+              <div class="time">5h</div>
+            </div>
+            <div class="post-text">
+              Published a short clip from today's demo — check it out!
+            </div>
+          </div>
+        </div>
+
+        <div class="post-card" tabindex="0">
+          <div class="avatar">GP</div>
+          <div class="meta">
+            <div class="row">
+              <div class="name">Group: Project X</div>
+              <div class="time">yesterday</div>
+            </div>
+            <div class="post-text">
+              Round-up of the week's milestones and a short video walkthrough.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="fab" id="addBtn" aria-label="Add post">+</button>
+
+      <nav class="bnav" aria-label="Community bottom navigation">
+        <button id="navChats">Chats</button>
+        <button id="navStatus">Status</button>
+        <button class="active" id="navPosts">Posts</button>
+        <button id="navMore">...</button>
+      </nav>
+    </div>
+
+    <div
+      class="modal"
+      id="newPostModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="newPostTitle"
+    >
+      <h4 id="newPostTitle">New post</h4>
+      <textarea id="newPostText" placeholder="Share something..."></textarea>
+      <div class="actions">
+        <button class="btn ghost" id="cancelModal">Cancel</button>
+        <button class="btn primary" id="createPost">Post</button>
+      </div>
+    </div>
+
+    <script>
+      // trending slider
+      const slides = document.getElementById("slides");
+      const dots = Array.from(document.querySelectorAll(".dot"));
+      let idx = 0;
+      function show(i) {
+        idx = i;
+        slides.style.transform = `translateX(-${i * 100}%)`;
+        dots.forEach((d) => d.classList.remove("active"));
+        dots[i].classList.add("active");
+      }
+      dots.forEach((d) =>
+        d.addEventListener("click", () => show(Number(d.dataset.i)))
+      );
+      let auto = setInterval(() => show((idx + 1) % dots.length), 4000);
+
+      document.getElementById("trendingBox").addEventListener("click", () => {
+        // jump to trending page (placeholder)
+        window.location.href = "cp-4.html#trending";
+      });
+
+      // posts creation modal
+      const addBtn = document.getElementById("addBtn");
+      const modal = document.getElementById("newPostModal");
+      const cancel = document.getElementById("cancelModal");
+      const create = document.getElementById("createPost");
+      const list = document.getElementById("list");
+      const textInput = document.getElementById("newPostText");
+
+      addBtn.addEventListener("click", () => {
+        modal.classList.add("show");
+        textInput.focus();
+      });
+      cancel.addEventListener("click", () => modal.classList.remove("show"));
+      create.addEventListener("click", () => {
+        const v = textInput.value.trim();
+        if (!v) return textInput.focus();
+        const card = document.createElement("div");
+        card.className = "post-card";
+        card.tabIndex = 0;
+        const initials = "ME";
+        const now = "now";
+        card.innerHTML = `
+        <div class="avatar">${initials}</div>
+        <div class="meta">
+          <div class="row">
+            <div class="name">You</div>
+            <div class="time">${now}</div>
+          </div>
+          <div class="post-text">${v.replace(/</g, "&lt;")}</div>
+        </div>`;
+        list.insertBefore(card, list.firstElementChild);
+        modal.classList.remove("show");
+        textInput.value = "";
+      });
+
+      // bottom nav
+      document.getElementById("navChats").addEventListener("click", () => {
+        window.location.href = "cp-1.html";
+      });
+      document.getElementById("navStatus").addEventListener("click", () => {
+        window.location.href = "cp-2.html";
+      });
+      document
+        .getElementById("navPosts")
+        .addEventListener("click", () => alert("Already on Posts"));
+      document.getElementById("navMore").addEventListener("click", () => {
+        window.location.href = "cp-4.html";
+      });
+
+      // search placeholder
+      document
+        .getElementById("searchBtn")
+        .addEventListener("click", () => alert("Search posts (placeholder)"));
+    </script>
+  </body>
+</html>

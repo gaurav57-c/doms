@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Admin Panel — Reports & Management</title>
+    <link rel="stylesheet" href="css/login.css" />
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f4f4f4;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+      .header h1 {
+        margin: 0;
+        color: #333;
+      }
+      .logout-btn {
+        padding: 10px 20px;
+        background: #ff4757;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+      }
+      .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      .stat-card h3 {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+      }
+      .stat-card .number {
+        font-size: 32px;
+        font-weight: bold;
+        color: #1d9bf0;
+        margin-top: 10px;
+      }
+      .container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #eee;
+      }
+      .tab {
+        padding: 10px 20px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        color: #666;
+        border-bottom: 3px solid transparent;
+      }
+      .tab.active {
+        color: #1d9bf0;
+        border-bottom-color: #1d9bf0;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+      th {
+        background: #f9f9f9;
+        font-weight: 600;
+        color: #333;
+      }
+      tr:hover {
+        background: #f5f5f5;
+      }
+      .action-btn {
+        padding: 6px 12px;
+        margin-right: 5px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .ban-btn {
+        background: #ff4757;
+        color: white;
+      }
+      .unban-btn {
+        background: #27ae60;
+        color: white;
+      }
+      .dismiss-btn {
+        background: #ccc;
+        color: #333;
+      }
+      .loading {
+        text-align: center;
+        padding: 30px;
+        color: #999;
+      }
+      .empty {
+        text-align: center;
+        padding: 30px;
+        color: #999;
+      }
+      .report-reason {
+        max-width: 300px;
+        word-wrap: break-word;
+        color: #666;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🛡️ Admin Panel</h1>
+      <button class="logout-btn" onclick="logoutAdmin()">Logout</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <h3>Total Users</h3>
+        <div class="number" id="totalUsers">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Pending Reports</h3>
+        <div class="number" id="pendingReports">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Banned Users</h3>
+        <div class="number" id="bannedUsers">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Total Matches</h3>
+        <div class="number" id="totalMatches">0</div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('reports')">
+          📋 Reports
+        </button>
+        <button class="tab" onclick="switchTab('users')">👥 Users</button>
+        <button class="tab" onclick="switchTab('matches')">⚔️ Matches</button>
+        <button onclick="window.location.href='/test/find.html'">Home</button>
+      </div>
+
+      <!-- Reports Tab -->
+      <div id="reports" class="tab-content active">
+        <h2>User Reports</h2>
+        <div id="reportsTable" class="loading">Loading...</div>
+      </div>
+
+      <!-- Users Tab -->
+      <div id="users" class="tab-content">
+        <h2>Manage Users</h2>
+        <div id="usersTable" class="loading">Loading...</div>
+      </div>
+
+      <!-- Matches Tab -->
+      <div id="matches" class="tab-content">
+        <h2>Recent Matches</h2>
+        <div id="matchesTable" class="loading">Loading...</div>
+      </div>
+    </div>
+
+    <script>
+      const firestore = firebase.firestore();
+      let adminUser = null;
+
+      // Check if user is admin
+      firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+          window.location.href = "signin.html";
+          return;
+        }
+
+        const userDoc = await firestore.collection("users").doc(user.uid).get();
+        const userData = userDoc.data();
+
+        if (userData && userData.isAdmin) {
+          adminUser = user;
+          loadAdminData();
+        } else {
+          alert("Access denied. Admin only.");
+          window.location.href = "cm/cp-1.html";
+        }
+      });
+
+      function switchTab(tabName) {
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((el) => el.classList.remove("active"));
+        document
+          .querySelectorAll(".tab")
+          .forEach((el) => el.classList.remove("active"));
+        document.getElementById(tabName).classList.add("active");
+        event.target.classList.add("active");
+      }
+
+      async function loadAdminData() {
+        // Load stats
+        const usersSnap = await firestore.collection("users").get();
+        const reportsSnap = await firestore.collection("reports").get();
+        const matchesSnap = await firestore
+          .collection("matches")
+          .limit(100)
+          .get();
+
+        const totalUsers = usersSnap.size;
+        const bannedUsers = usersSnap.docs.filter(
+          (d) => d.data().banned
+        ).length;
+        const pendingReports = reportsSnap.docs.filter(
+          (d) => !d.data().resolved
+        ).length;
+
+        document.getElementById("totalUsers").textContent = totalUsers;
+        document.getElementById("bannedUsers").textContent = bannedUsers;
+        document.getElementById("pendingReports").textContent = pendingReports;
+        document.getElementById("totalMatches").textContent = matchesSnap.size;
+
+        // Load reports
+        loadReports();
+        // Load users
+        loadUsers();
+        // Load matches
+        loadMatches();
+      }
+
+      async function loadReports() {
+        const reportsSnap = await firestore
+          .collection("reports")
+          .where("resolved", "==", false)
+          .get();
+
+        if (reportsSnap.empty) {
+          document.getElementById("reportsTable").innerHTML =
+            '<div class="empty">No pending reports</div>';
+          return;
+        }
+
+        let html = `
+                <table>
+                    <tr>
+                        <th>Reporter</th>
+                        <th>Reported User</th>
+                        <th>Reason</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+            `;
+
+        for (const doc of reportsSnap.docs) {
+          const report = doc.data();
+          const reporterDoc = await firestore
+            .collection("users")
+            .doc(report.reporterId)
+            .get();
+          const reportedDoc = report.reportedUid
+            ? await firestore.collection("users").doc(report.reportedUid).get()
+            : null;
+
+          const reporterName = reporterDoc.exists
+            ? reporterDoc.data().displayName
+            : "Unknown";
+          const reportedName = reportedDoc
+            ? reportedDoc.data().displayName
+            : report.reportedName;
+          const date = report.createdAt
+            ? report.createdAt.toDate().toLocaleDateString()
+            : "N/A";
+
+          html += `
+                    <tr>
+                        <td>${reporterName}</td>
+                        <td><strong>${reportedName}</strong></td>
+                        <td><div class="report-reason">${report.reason}</div></td>
+                        <td>${date}</td>
+                        <td>
+                            <button class="action-btn ban-btn" onclick="banUser('${report.reportedUid}', '${doc.id}')">Ban User</button>
+                            <button class="action-btn dismiss-btn" onclick="dismissReport('${doc.id}')">Dismiss</button>
+                        </td>
+                    </tr>
+                `;
+        }
+        html += "</table>";
+        document.getElementById("reportsTable").innerHTML = html;
+      }
+
+      async function loadUsers() {
+        const usersSnap = await firestore.collection("users").limit(50).get();
+
+        let html = `
+                <table>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Trophies</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+            `;
+
+        for (const doc of usersSnap.docs) {
+          const user = doc.data();
+          const status = user.banned ? "🚫 BANNED" : "✅ Active";
+          const btnText = user.banned ? "Unban" : "Ban";
+          const btnClass = user.banned ? "unban-btn" : "ban-btn";
+
+          html += `
+                    <tr>
+                        <td><strong>${user.displayName}</strong></td>
+                        <td>${user.email}</td>
+                        <td>${user.trophies || 0}</td>
+                        <td>${status}</td>
+                        <td>
+                            <button class="action-btn ${btnClass}" onclick="banUser('${
+            doc.id
+          }', null)">${btnText}</button>
+                        </td>
+                    </tr>
+                `;
+        }
+        html += "</table>";
+        document.getElementById("usersTable").innerHTML = html;
+      }
+
+      async function loadMatches() {
+        const matchesSnap = await firestore
+          .collection("matches")
+          .orderBy("createdAt", "desc")
+          .limit(50)
+          .get();
+
+        let html = `
+                <table>
+                    <tr>
+                        <th>Room UID</th>
+                        <th>Player 1</th>
+                        <th>Player 2</th>
+                        <th>Result</th>
+                        <th>Date</th>
+                    </tr>
+            `;
+
+        for (const doc of matchesSnap.docs) {
+          const match = doc.data();
+          const date = match.createdAt
+            ? match.createdAt.toDate().toLocaleDateString()
+            : "N/A";
+
+          html += `
+                    <tr>
+                        <td><small>${match.roomUID}</small></td>
+                        <td>${match.creatorName}</td>
+                        <td>${match.opponentName}</td>
+                        <td>${
+                          match.result ? match.result.toUpperCase() : "N/A"
+                        }</td>
+                        <td>${date}</td>
+                    </tr>
+                `;
+        }
+        html += "</table>";
+        document.getElementById("matchesTable").innerHTML = html;
+      }
+
+      async function banUser(userId, reportId) {
+        if (!confirm("Are you sure?")) return;
+
+        try {
+          await firestore.collection("users").doc(userId).update({
+            banned: true,
+            bannedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+
+          if (reportId) {
+            await firestore.collection("reports").doc(reportId).update({
+              resolved: true,
+              action: "banned",
+            });
+          }
+
+          alert("User banned successfully");
+          loadAdminData();
+        } catch (err) {
+          console.error("Error banning user:", err);
+          alert("Error: " + err.message);
+        }
+      }
+
+      async function dismissReport(reportId) {
+        try {
+          await firestore.collection("reports").doc(reportId).update({
+            resolved: true,
+            action: "dismissed",
+          });
+          alert("Report dismissed");
+          loadAdminData();
+        } catch (err) {
+          console.error("Error dismissing report:", err);
+          alert("Error: " + err.message);
+        }
+      }
+
+      function logoutAdmin() {
+        firebase
+          .auth()
+          .signOut()
+          .then(() => {
+            window.location.href = "signin.html";
+          });
+      }
+    </script>
+  </body>
+</html>

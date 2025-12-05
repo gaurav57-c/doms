@@ -1,0 +1,30 @@
+.result-box {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.result-box h2 {
+  font-size: 28px;
+  margin-bottom: 16px;
+}
+
+.trophy-update {
+  font-size: 20px;
+  color: green;
+  margin-bottom: 24px;
+}
+
+.result-actions button {
+  margin: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  border: none;
+  background-color: #333;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.result-actions button:hover {
+  background-color: #555;
+}

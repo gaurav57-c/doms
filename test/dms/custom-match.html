@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Custom Match</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="../firebase-config.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f4f4f4;
+      }
+      .container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .code-display {
+        background: #f0f0f0;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        margin: 20px 0;
+      }
+      .code-input {
+        font-size: 24px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        text-align: center;
+        padding: 10px;
+        border: 2px solid #1d9bf0;
+        border-radius: 5px;
+        background: white;
+        width: 100%;
+        cursor: text;
+        margin: 10px 0;
+      }
+      .opponent-box {
+        padding: 15px;
+        background: #f0f0f0;
+        border-radius: 8px;
+        margin: 20px 0;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+      .opponent-photo {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      .empty-slot {
+        padding: 20px;
+        background: #e8e8e8;
+        border-radius: 8px;
+        text-align: center;
+        color: #666;
+        margin: 10px 0;
+      }
+      .spectators-section {
+        margin: 20px 0;
+      }
+      .spectator-item {
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        background: #f9f9f9;
+        margin: 5px 0;
+        border-radius: 5px;
+        align-items: center;
+      }
+      .spectator-photo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0;
+      }
+      .main-btn {
+        flex: 1;
+        padding: 12px;
+        background: #1d9bf0;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 16px;
+      }
+      .main-btn:hover {
+        background: #1a8cd8;
+      }
+      .main-btn.danger {
+        background: #ff4757;
+      }
+      .main-btn.danger:hover {
+        background: #ff3838;
+      }
+      .back-btn {
+        width: 100%;
+        padding: 12px;
+        background: #ccc;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      .copy-btn {
+        margin-top: 10px;
+        padding: 10px 20px;
+        background: #1d9bf0;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Create Custom Match</h2>
+
+      <div class="code-display">
+        <p><strong>Your Room Code:</strong></p>
+        <input type="text" id="customCode" class="code-input" readonly />
+        <button class="copy-btn" onclick="copyToClipboard()">Copy Code</button>
+      </div>
+
+      <div id="opponentSection">
+        <h3>Opponent</h3>
+        <div id="opponentBox" class="empty-slot">Waiting for opponent...</div>
+      </div>
+
+      <div class="spectators-section">
+        <h3>Spectators (<span id="spectatorCount">0</span>)</h3>
+        <div id="spectatorList" style="max-height: 300px; overflow: auto"></div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="main-btn" id="startBtn">Start Match</button>
+        <button class="main-btn danger" id="disbandBtn">Disband</button>
+      </div>
+
+      <button
+        class="back-btn"
+        onclick="window.location.href='matchmaking.html'"
+      >
+        Go Back
+      </button>
+    </div>
+
+    <script>
+      const firestore = firebase.firestore();
+      const roomsRef = firestore.collection("rooms");
+      const usersRef = firestore.collection("users");
+
+      let currentUser = null;
+      let roomUID = null;
+      let roomUnsubscribe = null;
+
+      function generateUID() {
+        return Math.random().toString(36).substr(2, 9).toUpperCase();
+      }
+
+      function copyToClipboard() {
+        const code = document.getElementById("customCode").value;
+        navigator.clipboard.writeText(code).then(() => {
+          alert("Room code copied!");
+        });
+      }
+
+      function listenToRoom(roomUID) {
+        roomUnsubscribe = roomsRef.doc(roomUID).onSnapshot(async (doc) => {
+          if (!doc.exists) return;
+
+          const room = doc.data();
+
+          // Update opponent
+          if (room.opponent) {
+            try {
+              const opDoc = await usersRef.doc(room.opponent.id).get();
+              const opData = opDoc.data();
+              document.getElementById("opponentBox").innerHTML = `
+                <img src="${
+                  opData.profilePhoto || "https://via.placeholder.com/80"
+                }" alt="Opponent" class="opponent-photo">
+                <div>
+                  <div style="font-weight: bold;">${opData.displayName}</div>
+                  <div style="color: #666;">🏆 ${opData.trophies || 0}</div>
+                </div>
+              `;
+            } catch (e) {
+              console.error("Error loading opponent:", e);
+            }
+          } else {
+            document.getElementById("opponentBox").innerHTML =
+              '<div class="empty-slot">Waiting for opponent...</div>';
+          }
+
+          // Update spectators
+          const spectatorList = document.getElementById("spectatorList");
+          spectatorList.innerHTML = "";
+          document.getElementById("spectatorCount").textContent =
+            room.spectators ? room.spectators.length : 0;
+
+          if (room.spectators && room.spectators.length > 0) {
+            for (const spectatorId of room.spectators) {
+              try {
+                const specDoc = await usersRef.doc(spectatorId).get();
+                if (specDoc.exists) {
+                  const specData = specDoc.data();
+                  const div = document.createElement("div");
+                  div.className = "spectator-item";
+                  div.innerHTML = `
+                    <img src="${
+                      specData.profilePhoto || "https://via.placeholder.com/40"
+                    }" alt="Spectator" class="spectator-photo">
+                    <span>${specData.displayName}</span>
+                  `;
+                  spectatorList.appendChild(div);
+                }
+              } catch (e) {
+                console.error("Error loading spectator:", e);
+              }
+            }
+          }
+        });
+      }
+
+      firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+          window.location.href = "../signin.html";
+          return;
+        }
+
+        currentUser = user;
+        roomUID = "ROOM_" + generateUID();
+        document.getElementById("customCode").value = roomUID;
+
+        try {
+          const userDoc = await usersRef.doc(user.uid).get();
+          const userData = userDoc.data();
+
+          await roomsRef.doc(roomUID).set({
+            creatorId: user.uid,
+            creatorName: userData.displayName,
+            creatorPhoto: userData.profilePhoto || "",
+            creatorRank: userData.rank || 0,
+            creatorTrophies: userData.trophies || 0,
+            opponent: null,
+            spectators: [],
+            status: "waiting",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+          });
+
+          listenToRoom(roomUID);
+        } catch (error) {
+          console.error("Error creating room:", error);
+          alert("Error creating room: " + error.message);
+        }
+      });
+
+      document
+        .getElementById("startBtn")
+        .addEventListener("click", async () => {
+          if (!currentUser || !roomUID) return;
+
+          try {
+            await roomsRef.doc(roomUID).update({
+              status: "started",
+              startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            });
+
+            sessionStorage.setItem("roomUID", roomUID);
+            window.location.href = "match.html";
+          } catch (error) {
+            console.error("Error starting match:", error);
+            alert("Error starting match");
+          }
+        });
+
+      document
+        .getElementById("disbandBtn")
+        .addEventListener("click", async () => {
+          if (!roomUID) return;
+
+          try {
+            await roomsRef.doc(roomUID).update({
+              status: "disbanded",
+              disbandedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            });
+
+            if (roomUnsubscribe) roomUnsubscribe();
+            window.location.href = "matchmaking.html";
+          } catch (error) {
+            console.error("Error disbanding room:", error);
+          }
+        });
+    </script>
+  </body>
+</html>

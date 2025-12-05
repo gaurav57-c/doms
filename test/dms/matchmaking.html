@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Matchmaking Options</title>
+    <link rel="stylesheet" href="../css/matchmaking.css" />
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="../firebase-config.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f4f4f4;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      h1 {
+        color: #333;
+        margin-bottom: 30px;
+      }
+      .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .main-btn {
+        padding: 14px 20px;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .main-btn:hover {
+        transform: scale(1.02);
+      }
+      .create-btn {
+        background: #1d9bf0;
+        color: white;
+      }
+      .create-btn:hover {
+        background: #1a8cd8;
+      }
+      .custom-btn {
+        background: #27ae60;
+        color: white;
+      }
+      .custom-btn:hover {
+        background: #229954;
+      }
+      .back-btn {
+        background: #ccc;
+        color: #333;
+        margin-top: 20px;
+      }
+      .back-btn:hover {
+        background: #bbb;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>⚔️ Matchmaking Options</h1>
+      <p>Choose how you want to find your next opponent</p>
+
+      <div class="button-group">
+        <button
+          class="main-btn create-btn"
+          onclick="checkAuthAndRedirect('custom-match.html')"
+        >
+          ➕ Create Custom Match
+        </button>
+        <button
+          class="main-btn create-btn"
+          onclick="checkAuthAndRedirect('search-randomly.html')"
+        >
+          🎲 Find Random Opponent
+        </button>
+        <button
+          class="main-btn custom-btn"
+          onclick="checkAuthAndRedirect('match-code.html')"
+        >
+          🔍 Join by Match Code
+        </button>
+      </div>
+
+      <button
+        class="main-btn back-btn"
+        onclick="window.location.href='/test/find.html'"
+      >
+        ← Back to Home
+      </button>
+    </div>
+
+    <script>
+      function checkAuthAndRedirect(page) {
+        firebase.auth().onAuthStateChanged((user) => {
+          if (!user) {
+            alert("Please sign in first");
+            window.location.href = "../signin.html";
+            return;
+          }
+          window.location.href = page;
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Random Match</title>
+    <link rel="stylesheet" href="../css/matchmaking.css" />
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="../firebase-config.js"></script>
+    <style>
+      .matchmaking-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        text-align: center;
+      }
+      .search-animation {
+        font-size: 48px;
+        animation: pulse 1s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+      .opponent-box {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        background: #f0f0f0;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+      .opponent-photo {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      .opponent-info {
+        flex: 1;
+        text-align: left;
+      }
+      .opponent-name {
+        font-weight: bold;
+        font-size: 16px;
+      }
+      .opponent-details {
+        color: #666;
+        font-size: 12px;
+      }
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0;
+      }
+      .main-btn {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 16px;
+      }
+      .accept-btn {
+        background: #27ae60;
+        color: white;
+      }
+      .accept-btn:hover {
+        background: #229954;
+      }
+      .decline-btn {
+        background: #e74c3c;
+        color: white;
+      }
+      .decline-btn:hover {
+        background: #c0392b;
+      }
+      .back-btn {
+        width: 100%;
+        padding: 10px;
+        background: #ccc;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="matchmaking-container">
+      <h2>Random Match</h2>
+
+      <div id="searchStatus">
+        <div class="search-animation">🔍</div>
+        <p>Searching for match...</p>
+        <p id="searchTime">Time: 0s</p>
+      </div>
+
+      <div id="opponentContainer" class="hidden">
+        <h3>Match Found!</h3>
+        <div id="opponentBox" class="opponent-box">
+          <img
+            id="opponentPhoto"
+            src="https://via.placeholder.com/80"
+            alt="Opponent"
+            class="opponent-photo"
+          />
+          <div class="opponent-info">
+            <div class="opponent-name" id="opponentName">Player Name</div>
+            <div class="opponent-details" id="opponentDetails">Details</div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="main-btn accept-btn" id="acceptBtn">Accept</button>
+          <button class="main-btn decline-btn" id="declineBtn">Decline</button>
+        </div>
+      </div>
+
+      <button class="back-btn" id="backBtn" onclick="goBack()">Go Back</button>
+    </div>
+
+    <script>
+      const firestore = firebase.firestore();
+      const searchRef = firestore.collection("searchQueue");
+      const roomsRef = firestore.collection("rooms");
+      const usersRef = firestore.collection("users");
+
+      let currentUser = null;
+      let searcherId = null;
+      let searchTimeElapsed = 0;
+      let matchFound = false;
+      let foundOpponent = null;
+      let foundRoom = null;
+      let searchUnsubscribe = null;
+      let timeInterval = null;
+
+      firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+          window.location.href = "../signin.html";
+          return;
+        }
+
+        currentUser = user;
+        searcherId = "SEARCH_" + user.uid + "_" + Date.now();
+
+        try {
+          const userDoc = await usersRef.doc(user.uid).get();
+          const userData = userDoc.data();
+
+          // Add current user to search queue
+          await searchRef.doc(searcherId).set({
+            userId: user.uid,
+            displayName: userData.displayName,
+            profilePhoto: userData.profilePhoto || "",
+            rank: userData.rank || 0,
+            trophies: userData.trophies || 0,
+            country: userData.country || "",
+            status: "searching",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+
+          startSearchTimer();
+          listenForMatch();
+        } catch (error) {
+          console.error("Error joining search queue:", error);
+          alert("Error: " + error.message);
+        }
+      });
+
+      function startSearchTimer() {
+        timeInterval = setInterval(() => {
+          searchTimeElapsed++;
+          document.getElementById(
+            "searchTime"
+          ).textContent = `Time: ${searchTimeElapsed}s`;
+        }, 1000);
+      }
+
+      function listenForMatch() {
+        // Listen to search queue and find suitable opponent
+        searchUnsubscribe = searchRef
+          .where("status", "==", "searching")
+          .orderBy("createdAt", "asc")
+          .limit(10)
+          .onSnapshot(async (snapshot) => {
+            const searchers = [];
+            snapshot.forEach((doc) => {
+              if (doc.id !== searcherId) {
+                searchers.push({
+                  id: doc.id,
+                  ...doc.data(),
+                });
+              }
+            });
+
+            if (searchers.length > 0 && !matchFound) {
+              // Find best opponent (similar rank)
+              const opponent = findBestOpponent(searchers);
+
+              if (opponent) {
+                matchFound = true;
+                foundOpponent = opponent;
+
+                // Create room
+                await createTempRoom(opponent);
+                displayOpponent(opponent);
+              }
+            }
+          });
+      }
+
+      function findBestOpponent(searchers) {
+        if (searchers.length === 0) return null;
+
+        // Simple logic: pick first available
+        // TODO: Can improve with ELO range matching
+        return searchers[0];
+      }
+
+      async function createTempRoom(opponent) {
+        try {
+          const roomUID = "TEMP_" + generateUID();
+          const userData = (await usersRef.doc(currentUser.uid).get()).data();
+
+          await roomsRef.doc(roomUID).set({
+            creatorId: currentUser.uid,
+            creatorName: userData.displayName,
+            creatorPhoto: userData.profilePhoto || "",
+            creatorRank: userData.rank || 0,
+            creatorTrophies: userData.trophies || 0,
+            opponent: {
+              id: opponent.userId,
+              displayName: opponent.displayName,
+            },
+            spectators: [],
+            status: "waiting_confirmation",
+            matchType: "random",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+
+          foundRoom = roomUID;
+
+          // Update both users' status
+          await searchRef.doc(searcherId).update({ status: "matched" });
+          await searchRef.doc(opponent.id).update({ status: "matched" });
+        } catch (error) {
+          console.error("Error creating temp room:", error);
+        }
+      }
+
+      function displayOpponent(opponent) {
+        document.getElementById("searchStatus").style.display = "none";
+        document.getElementById("opponentContainer").classList.remove("hidden");
+
+        document.getElementById("opponentPhoto").src = opponent.profilePhoto;
+        document.getElementById("opponentName").textContent =
+          opponent.displayName;
+        document.getElementById("opponentDetails").innerHTML = `
+                🏆 ${opponent.trophies} Trophies • Rank #${
+          opponent.rank || "Unranked"
+        }
+            `;
+      }
+
+      document
+        .getElementById("acceptBtn")
+        .addEventListener("click", async () => {
+          if (!foundRoom) return;
+
+          try {
+            await roomsRef.doc(foundRoom).update({
+              status: "started",
+              startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            });
+
+            sessionStorage.setItem("roomUID", foundRoom);
+            clearInterval(timeInterval);
+            if (searchUnsubscribe) searchUnsubscribe();
+
+            window.location.href = "match.html";
+          } catch (error) {
+            console.error("Error accepting match:", error);
+            alert("Error: " + error.message);
+          }
+        });
+
+      document
+        .getElementById("declineBtn")
+        .addEventListener("click", async () => {
+          if (!currentUser || !searcherId) return;
+
+          try {
+            await searchRef.doc(searcherId).delete();
+            matchFound = false;
+            foundOpponent = null;
+
+            // Reset UI and search again
+            document.getElementById("searchStatus").style.display = "block";
+            document
+              .getElementById("opponentContainer")
+              .classList.add("hidden");
+            searchTimeElapsed = 0;
+
+            listenForMatch();
+          } catch (error) {
+            console.error("Error declining match:", error);
+          }
+        });
+
+      function goBack() {
+        clearInterval(timeInterval);
+        if (searchUnsubscribe) searchUnsubscribe();
+
+        if (searcherId) {
+          searchRef.doc(searcherId).delete().catch(console.error);
+        }
+
+        window.location.href = "matchmaking.html";
+      }
+
+      function generateUID() {
+        return Math.random().toString(36).substr(2, 9).toUpperCase();
+      }
+
+      window.addEventListener("beforeunload", () => {
+        if (searcherId) {
+          searchRef.doc(searcherId).delete().catch(console.error);
+        }
+      });
+    </script>
+  </body>
+</html>

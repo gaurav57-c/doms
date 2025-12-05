@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>DMS - Profile</title>
+    <link rel="stylesheet" href="css/profile.css" />
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+      .profile-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .profile-pic {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      .form-group {
+        margin: 15px 0;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      .form-group input,
+      .form-group textarea {
+        width: 100%;
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+      .form-group button {
+        padding: 10px 20px;
+        margin-right: 10px;
+      }
+      .edit-mode input:disabled {
+        background: #f0f0f0;
+      }
+      .info-display {
+        padding: 10px;
+        background: #f9f9f9;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="profile-container">
+      <h2>Your Profile</h2>
+
+      <div id="profileInfo">
+        <p>Loading...</p>
+      </div>
+
+      <div id="editSection" style="display: none">
+        <h3>Edit Profile</h3>
+        <form id="profileForm">
+          <div class="form-group">
+            <label>Profile Picture</label>
+            <img id="profilePicPreview" class="profile-pic" src="" />
+            <input type="file" id="profilePicInput" accept="image/*" />
+          </div>
+
+          <div class="form-group">
+            <label>Display Name</label>
+            <input type="text" id="displayNameInput" required />
+          </div>
+
+          <div class="form-group">
+            <label>Username (unique)</label>
+            <input type="text" id="usernameInput" required />
+          </div>
+
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="fullNameInput" required />
+          </div>
+
+          <div class="form-group">
+            <label>Pincode</label>
+            <input type="text" id="pincodeInput" required />
+          </div>
+
+          <div class="form-group">
+            <label>Street Address</label>
+            <input type="text" id="streetInput" />
+          </div>
+
+          <div class="form-group">
+            <label>City</label>
+            <input type="text" id="cityInput" required />
+          </div>
+
+          <div class="form-group">
+            <label>State</label>
+            <input type="text" id="stateInput" required />
+          </div>
+
+          <div class="form-group">
+            <label>Country</label>
+            <input type="text" id="countryInput" required />
+          </div>
+
+          <button type="submit">Save Changes</button>
+          <button type="button" id="cancelBtn">Cancel</button>
+          <span id="saveMsg" style="color: green; margin-left: 10px"></span>
+        </form>
+      </div>
+
+      <div id="actionButtons" style="margin-top: 20px">
+        <button id="editBtn">Edit Profile</button>
+        <button
+          onclick="firebase.auth().signOut(); window.location.href='signin.html';"
+        >
+          Sign Out
+        </button>
+        <button onclick="window.location.href='cm/cp-4.html'">
+          Back to Home
+        </button>
+      </div>
+    </div>
+
+    <script src="profile.js"></script>
+  </body>
+</html>
