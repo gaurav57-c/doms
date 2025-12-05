@@ -6,7 +6,7 @@
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDp7aepzeBP4pgAcYJtYEJ_rC7p58sQx3A",
+  apiKey: "API",
   authDomain: "ftest-e6bec.firebaseapp.com",
   projectId: "ftest-e6bec",
   storageBucket: "ftest-e6bec.firebasestorage.app",
